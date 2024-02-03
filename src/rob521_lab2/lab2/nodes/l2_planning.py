@@ -264,16 +264,41 @@ class PathPlanner:
     def cost_to_come(self, trajectory_o):
         #The cost to get to a node from lavalle 
         print("TO DO: Implement a cost to come metric")
-        
+
+        '''
         final_point = trajectory_o[:, -1]
         distance_cost = np.linalg.norm(self.cur_goal[:2] - final_point[:2])
+        '''
+
+        # Another metric
+        trajectory_diff = trajectory_o[1:, :2] - trajectory_o[:-1, :2]
+        trajectory_norms = np.linalg.norm(trajectory_diff, axis=-1)
+        distance_cost = trajectory_norms.sum()
 
         return distance_cost
     
     def update_children(self, node_id):
         #Given a node_id with a changed cost, update all connected nodes with the new cost
         print("TO DO: Update the costs of connected nodes after rewiring.")
-        return
+        current_node = self.nodes[node_id]
+        child_nodes = current_node.children_ids
+        
+        for child_id in child_nodes:
+            child_traj = current_node.traj_to_children[child_id]
+            
+            # Check if the trajectory contains NaN values
+            nan_values_exist = False
+            for point in child_traj:
+                if np.isnan(point):
+                    nan_values_exist = True
+                    break
+            
+            if not nan_values_exist:
+                child_cost = current_node.cost + self.cost_to_come(child_traj)
+                self.nodes[child_id].cost = child_cost
+                self.update_children(child_id)
+
+        return 
 
     #Planner Functions
     def rrt_planning(self):
@@ -327,6 +352,8 @@ class PathPlanner:
 
             #Check for Collision
             print("TO DO: Check for collision.")
+            collision = self.check_collision(trajectory_o)
+            duplicate = self.check_if_duplicate(trajectory_o[:, -1])
 
             #Last node rewire
             print("TO DO: Last node rewiring")
