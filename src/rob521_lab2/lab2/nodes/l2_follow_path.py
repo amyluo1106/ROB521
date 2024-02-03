@@ -134,7 +134,7 @@ class PathFollower():
             for t in range(self.num_opts):
                 # propogate trajectory forward, assuming perfect control of velocity and no dynamic effects
                 local_paths[:, t, :] = self.trajectory_rollout2(self.all_opts[t, 0], self.all_opts[t, 1], self.pose_in_map_np).T
-                pass
+                # pass
 
             # check all trajectory points for collisions
             # first find the closest collision point in the map to each local path point
