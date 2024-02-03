@@ -264,7 +264,11 @@ class PathPlanner:
     def cost_to_come(self, trajectory_o):
         #The cost to get to a node from lavalle 
         print("TO DO: Implement a cost to come metric")
-        return 0
+        
+        final_point = trajectory_o[:, -1]
+        distance_cost = np.linalg.norm(self.cur_goal[:2] - final_point[:2])
+
+        return distance_cost
     
     def update_children(self, node_id):
         #Given a node_id with a changed cost, update all connected nodes with the new cost
