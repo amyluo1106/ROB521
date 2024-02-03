@@ -191,9 +191,16 @@ class PathFollower():
     def cost_to_come(self, trajectory_o):
         #The cost to get to a node from lavalle 
         print("TO DO: Implement a cost to come metric")
-        
+
+        # Another metric
+        trajectory_diff = trajectory_o[1:, :2] - trajectory_o[:-1, :2]
+        trajectory_norms = np.linalg.norm(trajectory_diff, axis=-1)
+        distance_cost = trajectory_norms.sum()
+
+        '''
         final_point = trajectory_o[:, -1]
         distance_cost = np.linalg.norm(self.cur_goal[:2] - final_point[:2])
+        '''
 
         return distance_cost
 
