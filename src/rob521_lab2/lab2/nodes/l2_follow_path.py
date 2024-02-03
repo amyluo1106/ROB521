@@ -130,8 +130,10 @@ class PathFollower():
             local_paths[0] = np.atleast_2d(self.pose_in_map_np).repeat(self.num_opts, axis=0)
 
             print("TO DO: Propogate the trajectory forward, storing the resulting points in local_paths!")
-            for t in range(1, self.horizon_timesteps + 1):
+            # for t in range(1, self.horizon_timesteps + 1):
+            for t in range(self.num_opts):
                 # propogate trajectory forward, assuming perfect control of velocity and no dynamic effects
+                local_paths[:, t, :] = self.trajectory_rollout2(self.all_opts[t, 0], self.all_opts[t, 1], self.pose_in_map_np).T
                 pass
 
             # check all trajectory points for collisions
@@ -141,16 +143,36 @@ class PathFollower():
             local_paths_lowest_collision_dist = np.ones(self.num_opts) * 50
 
             print("TO DO: Check the points in local_path_pixels for collisions")
-            for opt in range(local_paths_pixels.shape[1]):
-                for timestep in range(local_paths_pixels.shape[0]):
-                    pass
+            # Find nearby wall points
+            nearby_walls = [i for i in self.map_nonzero_idxes if np.linalg.norm(i - [self.pos_in_map_pix[1], self.pos_in_map_pix[0]]) < 20]
+            colliding_paths = []
+
+            # Check for collision
+            if len(nearby_walls) > 0:
+                for opt in range(local_paths_pixels.shape[1]):
+                    for timestep in range(local_paths_pixels.shape[0]):
+                        current_location = np.array([int(local_paths_pixels[time_step, trajectory_opt, 1]), int(local_paths_pixels[time_step, trajectory_opt, 0])])
+                        kdtree = sp.cKDTree(nearby_walls)
+                        distance, index = kdtree.query(current_location.T, k=1)
+                        if distance < self.collision_radius_pix:
+                            colliding_paths.append(trajectory_opt)
+                            break
+                        # pass
 
             # remove trajectories that were deemed to have collisions
             print("TO DO: Remove trajectories with collisions!")
+            valid_opts = np.delete(np.array(valid_opts), colliding_paths)
 
             # calculate final cost and choose best option
             print("TO DO: Calculate the final cost and choose the best control option!")
             final_cost = np.zeros(self.num_opts)
+
+            for i in range(self.num_opts):
+                if i in valid_opts:
+                    final_cost[i] = self.cost_to_come(local_paths[:, i, :].T)
+                else:
+                    final_cost[i] = np.Inf
+
             if final_cost.size == 0:  # hardcoded recovery if all options have collision
                 control = [-.1, 0]
             else:
