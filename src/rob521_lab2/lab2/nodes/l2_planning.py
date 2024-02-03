@@ -65,6 +65,8 @@ class PathPlanner:
 
         #Planning storage
         self.nodes = [Node(np.zeros((3,1)), -1, 0)]
+        self.initial_pts = np.zeros((3,1))
+        self.nodes2 = self.initial_pts[:2][None]
 
         #RRT* Specific Parameters
         self.lebesgue_free = np.sum(self.occupancy_map) * self.map_settings_dict["resolution"] **2
@@ -110,17 +112,23 @@ class PathPlanner:
         #Returns the index of the closest node
         #print("TO DO: Implement a method to get the closest node to a sapled point")
         
-        kdtree = scipy.spatial.cKDTree(self.node_pts[:, :, 0])
+        kdtree = scipy.spatial.cKDTree(self.nodes2[:, :, 0])
         d, i = kdtree.query(point[:2, 0][None], k = k)
 
         return i
     
     def check_collision(self, robot_traj):
+        '''
         occup = self.points_to_robot_circle(robot_traj)
         rows = occup[..., 1]
         cols = occup[..., 0]
         collision = np.any(self.occupancy_map[rows, cols] == 0, axis = -1)
         return collision
+        '''
+        rr, cc = self.points_to_robot_circle(robot_traj[:2])
+        fp = np.clip(np.moveaxis(np.array([rr, cc]), 0, 2), 0, np.array(self.map_shape) - 1)
+        
+        return not np.all(self.occupancy_map[fp[..., 1], fp[..., 0]])
     
     def simulate_trajectory(self, node_i, point_s):
         #Simulates the non-holonomic motion of the robot.
@@ -130,7 +138,7 @@ class PathPlanner:
         #print("TO DO: Implment a method to simulate a trajectory given a sampled point")
 
         vel, rot_vel = self.robot_controller(node_i, point_s)
-        if abs(np.linalg.norm(self.goal_point - node_i) > 1):  # 10 for sim
+        if abs(np.linalg.norm(self.goal_point - node_i[:2]) > 1):  # 10 for sim
             robot_traj = self.trajectory_rollout(vel, rot_vel, node_i[0], node_i[1], node_i[2])
         else:
             # confused?
@@ -234,8 +242,8 @@ class PathPlanner:
         cc = []
         for cell in cells:
             r, c = disk(cell, int(self.robot_radius / self.map_settings_dict["resolution"]))
-            rr.apend(r)
-            cc.apend(c)
+            rr.append(r)
+            cc.append(c)
         return rr, cc
     #Note: If you have correctly completed all previous functions, then you should be able to create a working RRT function
 
@@ -272,14 +280,14 @@ class PathPlanner:
             point = self.sample_map_space()
 
             #Get the closest point
-            closest_node_id = self.closest_node(point)
+            closest_node_id = self.closest_node(point)[0]
 
             #Simulate driving the robot towards the closest point
             trajectory_o = self.simulate_trajectory(self.nodes[closest_node_id].point, point)
 
             #Check for collisions
             #print("TO DO: Check for collisions and add safe points to list of nodes.")
-            collision = self.check_colision(trajectory_o)
+            collision = self.check_collision(trajectory_o)
             duplicate = self.check_if_duplicate(trajectory_o[:, -1])
             
             #Check if goal has been reached
@@ -308,7 +316,7 @@ class PathPlanner:
             point = self.sample_map_space()
 
             #Closest Node
-            closest_node_id = self.closest_node(point)
+            closest_node_id = self.closest_node(point)[0]
 
             #Simulate trajectory
             trajectory_o = self.simulate_trajectory(self.nodes[closest_node_id].point, point)
@@ -346,7 +354,8 @@ def main():
 
     #RRT precursor
     path_planner = PathPlanner(map_filename, map_setings_filename, goal_point, stopping_dist)
-    nodes = path_planner.rrt_star_planning()
+    # nodes = path_planner.rrt_star_planning()
+    nodes = path_planner.rrt_planning()
     node_path_metric = np.hstack(path_planner.recover_path())
 
     #Leftover test functions
