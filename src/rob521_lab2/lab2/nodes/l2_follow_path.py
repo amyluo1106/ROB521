@@ -134,7 +134,6 @@ class PathFollower():
             for t in range(self.num_opts):
                 # propogate trajectory forward, assuming perfect control of velocity and no dynamic effects
                 local_paths[:, t, :] = self.trajectory_rollout_v2(self.all_opts[t, 0], self.all_opts[t, 1], self.pose_in_map_np).T
-                # pass
 
             # check all trajectory points for collisions
             # first find the closest collision point in the map to each local path point
@@ -151,17 +150,17 @@ class PathFollower():
             if len(nearby_walls) > 0:
                 for opt in range(local_paths_pixels.shape[1]):
                     for timestep in range(local_paths_pixels.shape[0]):
-                        current_location = np.array([int(local_paths_pixels[time_step, trajectory_opt, 1]), int(local_paths_pixels[time_step, trajectory_opt, 0])])
+                        current_location = np.array([int(local_paths_pixels[timestep, opt, 1]), int(local_paths_pixels[timestep, opt, 0])])
                         kdtree = sp.cKDTree(nearby_walls)
                         distance, index = kdtree.query(current_location.T, k=1)
                         if distance < self.collision_radius_pix:
-                            colliding_paths.append(trajectory_opt)
+                            colliding_paths.append(opt)
                             break
-                        # pass
 
             # remove trajectories that were deemed to have collisions
             print("TO DO: Remove trajectories with collisions!")
             valid_opts = np.delete(np.array(valid_opts), colliding_paths)
+            valid_opts = np.delete(np.array(valid_opts), ~colliding_paths) # i dont know which one, might need to be np array
 
             # calculate final cost and choose best option
             print("TO DO: Calculate the final cost and choose the best control option!")
