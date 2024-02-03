@@ -133,7 +133,7 @@ class PathFollower():
             # for t in range(1, self.horizon_timesteps + 1):
             for t in range(self.num_opts):
                 # propogate trajectory forward, assuming perfect control of velocity and no dynamic effects
-                local_paths[:, t, :] = self.trajectory_rollout2(self.all_opts[t, 0], self.all_opts[t, 1], self.pose_in_map_np).T
+                local_paths[:, t, :] = self.trajectory_rollout_v2(self.all_opts[t, 0], self.all_opts[t, 1], self.pose_in_map_np).T
                 # pass
 
             # check all trajectory points for collisions
@@ -188,6 +188,49 @@ class PathFollower():
             #     control=control, time=(rospy.Time.now() - tic).to_sec(), max_time=1/CONTROL_RATE))
 
             self.rate.sleep()
+
+    def cost_to_come(self, trajectory_o):
+        #The cost to get to a node from lavalle 
+        print("TO DO: Implement a cost to come metric")
+        
+        final_point = trajectory_o[:, -1]
+        distance_cost = np.linalg.norm(self.cur_goal[:2] - final_point[:2])
+
+        return distance_cost
+
+    def trajectory_rollout(self, vel, rot_vel, x0, y0, theta0):
+        # Given your chosen velocities determine the trajectory of the robot for your given timestep
+        # The returned trajectory should be a series of points to check for collisions
+        #print("TO DO: Implement a way to rollout the controls chosen")
+
+        t = np.linspace(0, self.timestep, self.num_substeps)
+        x0 = np.ones((1, self.num_substeps)) * x0
+        y0 = np.ones((1, self.num_substeps)) * y0
+        theta0 = np.ones((1, self.num_substeps)) * theta0
+        if rot_vel == 0:
+            x = vel * t * np.cos(theta0) + x0
+            y = vel * t * np.sin(theta0) + y0
+            theta = rot_vel * t
+        else:
+            # don't understand?
+            x = (vel / rot_vel) * (np.sin(rot_vel * t + theta0) - np.sin(theta0)) + x0
+            y = -(vel / rot_vel) * (np.cos(rot_vel * t + theta0) - np.cos(theta0)) + y0
+            theta = (rot_vel * t + theta0) % (2 * math.pi)
+        return np.vstack((x, y, theta))
+
+    def trajectory_rollout_v2(self, vel, rot_vel, current_node):
+    current_position = current_node
+    trajectory = np.zeros((3, self.horizon_timesteps + 1))
+    boundary_limits = np.array([[0.0, 43.5], [-45, 10]])
+
+    for i in range(self.horizon_timesteps + 1):
+        trajectory[0, i] = current_position[0] + vel * INTEGRATION_DT * math.cos(current_position[2])
+        trajectory[1, i] = current_position[1] + vel * INTEGRATION_DT * math.sin(current_position[2])
+        trajectory[2, i] = current_position[2] + rot_vel * INTEGRATION_DT
+
+        current_position = trajectory[:, i]
+
+    return trajectory
 
     def update_pose(self):
         # Update numpy poses with current pose using the tf_buffer
