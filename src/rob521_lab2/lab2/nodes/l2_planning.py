@@ -46,7 +46,7 @@ class PathPlanner:
 
         #Get the metric bounds of the map
         self.bounds = np.zeros([2,2]) #m
-        self.bounds[0, 0] = self.map_settings_dict["origin"][0]
+        self.bounds[0, 0] = self.map_settings_dict["origin"][0] 
         self.bounds[1, 0] = self.map_settings_dict["origin"][1]
         self.bounds[0, 1] = self.map_settings_dict["origin"][0] + self.map_shape[1] * self.map_settings_dict["resolution"]
         self.bounds[1, 1] = self.map_settings_dict["origin"][1] + self.map_shape[0] * self.map_settings_dict["resolution"]
@@ -103,7 +103,7 @@ class PathPlanner:
         #Check if point is a duplicate of an already existing node
         #print("TO DO: Check that nodes are not duplicates")
         
-        duplicate_range = 0.1
+        duplicate_range = 0.01
         for node in self.nodes:
             if np.linalg.norm(node.point.reshape(3, ) - point) <= duplicate_range:
                 return True
@@ -139,6 +139,10 @@ class PathPlanner:
         #print("TO DO: Implment a method to simulate a trajectory given a sampled point")
 
         vel, rot_vel = self.robot_controller(node_i, point_s)
+        # print("start", node_i)
+        # print("goal", point_s)
+        # print("vel", vel)
+        # print("rot", rot_vel)
         if abs(np.linalg.norm(self.goal_point - node_i[:2]) > 10):  # 10 for sim, 1
             robot_traj = self.trajectory_rollout(vel, rot_vel, node_i[0], node_i[1], node_i[2])
         else:
@@ -161,6 +165,7 @@ class PathPlanner:
                         if dist_to_goal < min_dist_goal:
                             min_dist_goal = dist_to_goal
                             robot_traj = robot_traj
+        # print("trajectory", robot_traj)
         return robot_traj
     
     def robot_controller(self, node_i, point_s):
@@ -305,7 +310,7 @@ class PathPlanner:
     def rrt_planning(self):
         #This function performs RRT on the given map and robot
         #You do not need to demonstrate this function to the TAs, but it is left in for you to check your work
-        for i in range(50000): #Most likely need more iterations than this to complete the map!
+        for i in range(50000): #Most likely need more iterations than this to complete the map! 50000
             #Sample map space
             point = self.sample_map_space()
 
@@ -314,17 +319,18 @@ class PathPlanner:
 
             #Simulate driving the robot towards the closest point
             trajectory_o = self.simulate_trajectory(self.nodes[closest_node_id].point, point)
+            # trajectory_o = self.simulate_trajectory(self.nodes[closest_node_id].point, [1, 0, 0])
 
             #Check for collisions
             #print("TO DO: Check for collisions and add safe points to list of nodes.")
             collision = self.check_collision(trajectory_o)
-            print(trajectory_o[:, -1])
+            # print(trajectory_o[:, -1])
             duplicate = self.check_if_duplicate(trajectory_o[:, -1])
 
-            # if collision: 
-            #     print("col")
-            # if duplicate: 
-            #     print("dup")
+            if collision: 
+                print("col")
+            if duplicate: 
+                print("dup")
             
             #Check if goal has been reached
             #print("TO DO: Check if at goal point.")
