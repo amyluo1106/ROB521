@@ -6,10 +6,12 @@ import pygame
 import time
 import pygame_utils
 import matplotlib.image as mpimg
-from skimage.draw import disk
+from skimage.draw import circle_perimeter
 from scipy.linalg import block_diag
 import math
-import scipy
+import scipy.spatial as sp
+
+np.random.seed(11)
 
 def load_map(filename):
     im = mpimg.imread("../maps/" + filename)
@@ -46,7 +48,7 @@ class PathPlanner:
 
         #Get the metric bounds of the map
         self.bounds = np.zeros([2,2]) #m
-        self.bounds[0, 0] = self.map_settings_dict["origin"][0] 
+        self.bounds[0, 0] = self.map_settings_dict["origin"][0]
         self.bounds[1, 0] = self.map_settings_dict["origin"][1]
         self.bounds[0, 1] = self.map_settings_dict["origin"][0] + self.map_shape[1] * self.map_settings_dict["resolution"]
         self.bounds[1, 1] = self.map_settings_dict["origin"][1] + self.map_shape[0] * self.map_settings_dict["resolution"]
@@ -59,6 +61,7 @@ class PathPlanner:
         #Goal Parameters
         self.goal_point = goal_point #m
         self.stopping_dist = stopping_dist #m
+        self.flag = 0
 
         #Trajectory Simulation Parameters
         self.timestep = 1.0 #s
@@ -82,6 +85,7 @@ class PathPlanner:
         return
 
     #Functions required for RRT
+    '''
     def sample_map_space(self):
         #Return an [x,y] coordinate to drive the robot towards
         #print("TO DO: Sample point to drive towards")
@@ -98,38 +102,125 @@ class PathPlanner:
             dy = 4 * self.stopping_dist * np.random.randn()
             point = np.array([[self.goal_point[0, 0] +dx], [self.goal_point[1, 0] + dy], [theta]])
         return point
+    '''
+    def sample_map_space(self):
+        # Return an [x,y] coordinate to drive the robot towards
+        # print("TO DO: Sample point to drive towards")
+
+        sample = np.zeros((2, 1))
+        # real_bounds = np.array([[-3.5, 43.5], [-49.25, 20]])
+        real_bounds = self.bounds  # np.array([[0.0, 43.5], [-46, 10]])
+        real_bounds = np.array([[0.0, 43.5], [-46, 10]])
+
+        sample[0] = np.random.uniform(low=real_bounds[0, 0], high=real_bounds[0, 1])
+        sample[1] = np.random.uniform(low=real_bounds[1, 0], high=real_bounds[1, 1])
+        # return sample
+
+        if abs(np.linalg.norm(self.nodes[-1].point[:2]-self.goal_point)) < 20:
+            self.flag = 1
+        if self.flag == 1:
+            scale = 1.3 * np.linalg.norm(self.nodes[-1].point[:2]-self.goal_point)
+            scale_x = scale  # * (real_bounds[0,1] - real_bounds[0,0])  # 10% box
+            scale_y = scale  # * (real_bounds[1,1] - real_bounds[1,0])
+
+            curr_coord = self.goal_point  # self.nodes[-1].point
+            x_box_low = np.clip(curr_coord[0] - scale_x, real_bounds[0, 0], real_bounds[0, 1])
+            y_box_low = np.clip(curr_coord[1] - scale_y, real_bounds[1, 0], real_bounds[1, 1])
+
+            x_box_high = np.clip(curr_coord[0] + scale_x, real_bounds[0, 0], real_bounds[0, 1])
+            y_box_high = np.clip(curr_coord[1] + scale_y, real_bounds[1, 0], real_bounds[1, 1])
+
+            x_sample = np.random.uniform(low=x_box_low, high=x_box_high)
+            y_sample = np.random.uniform(low=y_box_low, high=y_box_high)
+
+            sample[0] = x_sample
+            sample[1] = y_sample
+        # sample[0]=input("x")
+        # sample[1]=input("y")
+        # self.window.add_point(np.array(sample).reshape(2,), radius=1, width=0,
+        #                        color=COLORS['b'])
+        return sample
+    '''
+    def sample_map_space(self):
+        # Return a randomly sampled [x,y] coordinate as the target point for the robot to drive towards
+        sample_point = np.zeros((2, 1))
+        map_bounds = self.bounds
+    
+        # Check if the distance to the goal is less than 20
+        if abs(np.linalg.norm(self.goal_point - self.nodes[-1].point[:2])) < 20:
+            self.flag = 1
+    
+        # If the flag is set, sample a point around the goal
+        if self.flag == 1:
+            goal_proximity_factor = 1.3 * abs(np.linalg.norm(self.goal_point - self.nodes[-1].point[:2]))
+            scale_x = goal_proximity_factor
+            scale_y = goal_proximity_factor
+    
+            goal_position = self.goal_point
+            x_low_bound = np.clip(goal_position[0] - scale_x, map_bounds[0, 0], map_bounds[0, 1])
+            y_low_bound = np.clip(goal_position[1] - scale_y, map_bounds[1, 0], map_bounds[1, 1])
+            x_high_bound = np.clip(goal_position[0] + scale_x, map_bounds[0, 0], map_bounds[0, 1])
+            y_high_bound = np.clip(goal_position[1] + scale_y, map_bounds[1, 0], map_bounds[1, 1])
+    
+            sampled_x = np.random.uniform(low=x_low_bound, high=x_high_bound)
+            sampled_y = np.random.uniform(low=y_low_bound, high=y_high_bound)
+    
+            sample_point[0] = sampled_x
+            sample_point[1] = sampled_y
+    
+        else:
+            sample_point[0] = np.random.uniform(low=map_bounds[0, 0], high=map_bounds[0, 1])
+            sample_point[1] = np.random.uniform(low=map_bounds[1, 0], high=map_bounds[1, 1])
+
+        return sample_point
+    '''
     
     def check_if_duplicate(self, point):
         #Check if point is a duplicate of an already existing node
         #print("TO DO: Check that nodes are not duplicates")
         
-        duplicate_range = 0.01
+        duplicate_range = 0.1
         for node in self.nodes:
             if np.linalg.norm(node.point.reshape(3, ) - point) <= duplicate_range:
                 return True
         return False
     
-    def closest_node(self, point, k=1):
-        #Returns the index of the closest node
-        #print("TO DO: Implement a method to get the closest node to a sampled point")
-        
-        kdtree = scipy.spatial.cKDTree(self.nodes2[:, :, 0])
-        d, i = kdtree.query(point[:2, 0][None], k = k)
+    def closest_node(self, point, n):
+        # print(point)
+        # Returns the index of the closest node
 
-        return i
-    
+        kdtree = sp.cKDTree(np.stack([node.point[:2, :] for node in self.nodes], axis=0).squeeze(-1))
+        d, i = kdtree.query(point.T, k=n)
+        # print("here: ", np.array(i).shape)
+        # print(i)
+        # filter inf
+        i = np.array(i)
+        if len(i.shape) > 1:
+            i = list(filter(lambda a: a != len(self.nodes), i[0]))
+
+            if len(i) < n:
+                return i
+
+        return i[0:n]
+    '''
     def check_collision(self, robot_traj):
-        '''
-        occup = self.points_to_robot_circle(robot_traj)
-        rows = occup[..., 1]
-        cols = occup[..., 0]
-        collision = np.any(self.occupancy_map[rows, cols] == 0, axis = -1)
-        return collision
-        '''
+        
         rr, cc = self.points_to_robot_circle(robot_traj[:2])
         fp = np.clip(np.moveaxis(np.array([rr, cc]), 0, 2), 0, np.array(self.map_shape) - 1)
         
         return not np.all(self.occupancy_map[fp[..., 1], fp[..., 0]])
+    '''
+    def check_collision(self, robot_traj):
+        # pass in trajectory = 3 X N from simulate_trajectory() and check for collision
+        # False -> collision detected
+        # True -> no collision
+        traj_rr, traj_cc = self.points_to_robot_circle(
+            robot_traj[0:2, :])  # center and radius of trajectory in occupacy map
+        footprint = np.moveaxis(np.array([traj_rr, traj_cc]), 0, 2)
+        temp_x = np.clip(footprint[..., 1], 0, self.map_shape[0] - 1)
+        temp_y = np.clip(footprint[..., 0], 0, self.map_shape[1] - 1)
+
+        return np.any(np.any(self.occupancy_map[temp_x, temp_y] == 0, axis=-1))
     
     def simulate_trajectory(self, node_i, point_s):
         #Simulates the non-holonomic motion of the robot.
@@ -139,11 +230,7 @@ class PathPlanner:
         #print("TO DO: Implment a method to simulate a trajectory given a sampled point")
 
         vel, rot_vel = self.robot_controller(node_i, point_s)
-        # print("start", node_i)
-        # print("goal", point_s)
-        # print("vel", vel)
-        # print("rot", rot_vel)
-        if abs(np.linalg.norm(self.goal_point - node_i[:2]) > 10):  # 10 for sim, 1
+        if abs(np.linalg.norm(self.goal_point - node_i[:2]) > 1):  # 10 for sim
             robot_traj = self.trajectory_rollout(vel, rot_vel, node_i[0], node_i[1], node_i[2])
         else:
             # confused?
@@ -165,7 +252,6 @@ class PathPlanner:
                         if dist_to_goal < min_dist_goal:
                             min_dist_goal = dist_to_goal
                             robot_traj = robot_traj
-        # print("trajectory", robot_traj)
         return robot_traj
     
     def robot_controller(self, node_i, point_s):
@@ -179,7 +265,7 @@ class PathPlanner:
         # normalize
         heading_error = math.atan2(math.sin(heading_error), math.cos(heading_error))
         # tune parameter?
-        rot_vel = -0.1 * np.tan(heading_error)
+        rot_vel = -0.4 * np.tan(heading_error)
 
         # max rotational velocity constraint
         if rot_vel > self.rot_vel_max:
@@ -221,36 +307,37 @@ class PathPlanner:
         return np.vstack((x, y, theta))
     
     def point_to_cell(self, point):
-        #Convert a series of [x,y] points in the map to the indices for the corresponding cell in the occupancy map
-        #point is a 2 by N matrix of points of interest
-        #print("TO DO: Implement a method to get the map cell the robot is currently occupying")
-        
-        cells = []
-        map_x = self.map_settings_dict["origin"][0]
-        map_y = self.map_settings_dict["origin"][1]
-        res = self.map_settings_dict["resolution"]
-        # map height in meters 
-        map_height = self.map_shape[1] * res    
-        for i in range(len(point)):
-            x = int((point[i][0] - map_x)/res)
-            # point is wrt bottom left, while map_y is wrt top left
-            y = int((map_height - (point[i][1] - map_y))/res)
-            cells.append([x, y])
-        return cells
+        # Convert a series of [x,y] points in the map to the indices for the corresponding cell in the occupancy map
+        # point is a 2 by N matrix of points of interest
+
+        # print("TO DO: Implement a method to get the map cell the robot is currently occupying")
+
+        new_point = point.copy()
+        new_point[0] = (point[0] - self.bounds[0, 0]) // self.map_settings_dict["resolution"]
+        new_point[1] = self.map_shape[0] - (point[1] - self.bounds[1, 0]) // self.map_settings_dict["resolution"]
+        new_point = (np.floor(new_point)).astype(int)
+
+        return new_point
 
     def points_to_robot_circle(self, points):
-        #Convert a series of [x,y] points to robot map footprints for collision detection
-        #Hint: The disk function is included to help you with this function
-        #print("TO DO: Implement a method to get the pixel locations of the robot path")
-        
-        cells = self.point_to_cell(points)
+        # Convert a series of [x,y] points to robot map footprints for collision detection
+        # Hint: The disk function is included to help you with this function
+
+        # print("TO DO: Implement a method to get the pixel locations of the robot path")
+
         rr = []
         cc = []
-        for cell in cells:
-            r, c = disk(cell, int(self.robot_radius / self.map_settings_dict["resolution"]))
-            rr.append(r)
-            cc.append(c)
-        return rr, cc
+        robot_radius = np.floor(self.robot_radius // self.map_settings_dict["resolution"]).astype(int)
+
+        for pt in (np.transpose(points)):
+            occ = self.point_to_cell(pt)
+
+            temp_rr, temp_cc = circle_perimeter(occ[0], occ[1], robot_radius)
+
+            rr.append(temp_rr)
+            cc.append(temp_cc)
+
+        return np.array(rr), np.array(cc)
     #Note: If you have correctly completed all previous functions, then you should be able to create a working RRT function
 
     #RRT* specific functions
@@ -310,32 +397,25 @@ class PathPlanner:
     def rrt_planning(self):
         #This function performs RRT on the given map and robot
         #You do not need to demonstrate this function to the TAs, but it is left in for you to check your work
-        for i in range(50000): #Most likely need more iterations than this to complete the map! 50000
+        for i in range(50000): #Most likely need more iterations than this to complete the map!
             #Sample map space
             point = self.sample_map_space()
 
             #Get the closest point
-            closest_node_id = self.closest_node(point)[0]
+            closest_node_id = self.closest_node(point, 1)[0]
 
             #Simulate driving the robot towards the closest point
             trajectory_o = self.simulate_trajectory(self.nodes[closest_node_id].point, point)
-            # trajectory_o = self.simulate_trajectory(self.nodes[closest_node_id].point, [1, 0, 0])
 
             #Check for collisions
             #print("TO DO: Check for collisions and add safe points to list of nodes.")
             collision = self.check_collision(trajectory_o)
-            # print(trajectory_o[:, -1])
             duplicate = self.check_if_duplicate(trajectory_o[:, -1])
-
-            if collision: 
-                print("col")
-            if duplicate: 
-                print("dup")
             
             #Check if goal has been reached
             #print("TO DO: Check if at goal point.")
             if not (collision or duplicate):
-                print("here")
+                # print("here")
                 # Add node to list
                 cost = 0
                 self.nodes[closest_node_id].children_ids.append(self.nodes[-1].tag + 1)
@@ -349,7 +429,7 @@ class PathPlanner:
                     self.window.add_point(i)
 
                 [x, y] = [trajectory_o[0, -1], trajectory_o[1, -1]]
-                if np.linalg.norm(self.goal_point[:2] - (x, y)) < self.stopping_dist:
+                if np.linalg.norm(self.goal_point - np.array([x, y])) < self.stopping_dist:
                     print("rrt success")
                     return self.recover_path()
         return self.nodes
@@ -361,7 +441,8 @@ class PathPlanner:
             point = self.sample_map_space()
 
             #Closest Node
-            closest_node_id = self.closest_node(point)[0]
+            closest_node_id = self.closest_node(point
+            )[0]
 
             #Simulate trajectory
             trajectory_o = self.simulate_trajectory(self.nodes[closest_node_id].point, point)
@@ -398,7 +479,8 @@ def main():
     #map_setings_filename = "myhal.yaml"
 
     #robot information
-    goal_point = np.array([[10], [10]]) #m
+    # goal_point = np.array([[42], [-44]]) #m
+    goal_point = np.array([[1], [-1]]) #m
     stopping_dist = 0.5 #m
 
     #RRT precursor

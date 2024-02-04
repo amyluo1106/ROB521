@@ -130,7 +130,7 @@ class PathFollower():
             local_paths = np.zeros([self.horizon_timesteps + 1, self.num_opts, 3])
             local_paths[0] = np.atleast_2d(self.pose_in_map_np).repeat(self.num_opts, axis=0)
 
-            print("TO DO: Propogate the trajectory forward, storing the resulting points in local_paths!")
+            #print("TO DO: Propogate the trajectory forward, storing the resulting points in local_paths!")
             # for t in range(1, self.horizon_timesteps + 1):
             for t in range(self.num_opts):
                 # propogate trajectory forward, assuming perfect control of velocity and no dynamic effects
@@ -142,7 +142,7 @@ class PathFollower():
             valid_opts = range(self.num_opts)
             local_paths_lowest_collision_dist = np.ones(self.num_opts) * 50
 
-            print("TO DO: Check the points in local_path_pixels for collisions")
+            #print("TO DO: Check the points in local_path_pixels for collisions")
             # Find nearby wall points
             nearby_walls = [i for i in self.map_nonzero_idxes if np.linalg.norm(i - [self.pos_in_map_pix[1], self.pos_in_map_pix[0]]) < 20]
             colliding_paths = []
@@ -159,12 +159,12 @@ class PathFollower():
                             break
 
             # remove trajectories that were deemed to have collisions
-            print("TO DO: Remove trajectories with collisions!")
+            #print("TO DO: Remove trajectories with collisions!")
             valid_opts = np.delete(np.array(valid_opts), colliding_paths)
             valid_opts = np.delete(np.array(valid_opts), ~colliding_paths) # i dont know which one, might need to be np array
 
             # calculate final cost and choose best option
-            print("TO DO: Calculate the final cost and choose the best control option!")
+            #print("TO DO: Calculate the final cost and choose the best control option!")
             final_cost = np.zeros(self.num_opts)
 
             for i in range(self.num_opts):
@@ -191,7 +191,7 @@ class PathFollower():
 
     def cost_to_come(self, trajectory_o):
         #The cost to get to a node from lavalle 
-        print("TO DO: Implement a cost to come metric")
+        #print("TO DO: Implement a cost to come metric")
 
         # Another metric
         trajectory_diff = trajectory_o[1:, :2] - trajectory_o[:-1, :2]
