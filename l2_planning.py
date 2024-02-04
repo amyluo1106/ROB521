@@ -82,6 +82,7 @@ class PathPlanner:
         return
 
     #Functions required for RRT
+    '''
     def sample_map_space(self):
         #Return an [x,y] coordinate to drive the robot towards
         #print("TO DO: Sample point to drive towards")
@@ -98,6 +99,41 @@ class PathPlanner:
             dy = 4 * self.stopping_dist * np.random.randn()
             point = np.array([[self.goal_point[0, 0] +dx], [self.goal_point[1, 0] + dy], [theta]])
         return point
+    '''
+
+    def sample_map_space(self):
+        # Return a randomly sampled [x,y] coordinate as the target point for the robot to drive towards
+        sample_point = np.zeros((2, 1))
+        map_bounds = self.bounds
+    
+        # Check if the distance to the goal is less than 20
+        if abs(self.dist_to_goal(self.nodes[-1].point)) < 20:
+            self.flag = 1
+    
+        # If the flag is set, sample a point around the goal
+        if self.flag == 1:
+            goal_proximity_factor = 1.3 * self.dist_to_goal(self.nodes[-1].point)
+            scale_x = goal_proximity_factor
+            scale_y = goal_proximity_factor
+    
+            goal_position = self.goal_point
+            x_low_bound = np.clip(goal_position[0] - scale_x, map_bounds[0, 0], map_bounds[0, 1])
+            y_low_bound = np.clip(goal_position[1] - scale_y, map_bounds[1, 0], map_bounds[1, 1])
+            x_high_bound = np.clip(goal_position[0] + scale_x, map_bounds[0, 0], map_bounds[0, 1])
+            y_high_bound = np.clip(goal_position[1] + scale_y, map_bounds[1, 0], map_bounds[1, 1])
+    
+            sampled_x = np.random.uniform(low=x_low_bound, high=x_high_bound)
+            sampled_y = np.random.uniform(low=y_low_bound, high=y_high_bound)
+    
+            sample_point[0] = sampled_x
+            sample_point[1] = sampled_y
+    
+        else:
+            sample_point[0] = np.random.uniform(low=map_bounds[0, 0], high=map_bounds[0, 1])
+            sample_point[1] = np.random.uniform(low=map_bounds[1, 0], high=map_bounds[1, 1])
+
+    return sample_point
+
     
     def check_if_duplicate(self, point):
         #Check if point is a duplicate of an already existing node
