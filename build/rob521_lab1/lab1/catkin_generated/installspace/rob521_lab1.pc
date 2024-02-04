@@ -1,0 +1,8 @@
+prefix=/home/rob521_1/catkin_ws/install
+
+Name: rob521_lab1
+Description: Description of rob521_lab1
+Version: 1.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: rospy std_msgs geometry_msgs nav_msgs
