@@ -14,7 +14,7 @@ import math
 import scipy.spatial as sp
 import os
 
-#np.random.seed(4)
+np.random.seed(66)
 
 def load_map(filename):
     im = mpimg.imread("../maps/" + filename)
@@ -65,8 +65,8 @@ class PathPlanner:
 
         # Robot information
         self.robot_radius = 0.22  # m
-        self.vel_max = 0.5  # m/s (Feel free to change!)
-        self.rot_vel_max = 0.2  # rad/s (Feel free to change!)
+        self.vel_max = 0.77 # 0.5  # m/s (Feel free to change!)
+        self.rot_vel_max = 0.69 # 0.2  # rad/s (Feel free to change!)
 
         # Goal Parameters
         self.goal_point = goal_point  # m
@@ -104,6 +104,8 @@ class PathPlanner:
 
         sample_goal = np.random.rand() < 0.1
         better_bounds = np.array([[0.0, 44], [-47, 11]])
+        far_bounds = np.array([[38, 39.5], [-45.8, 43.5]])
+        near_bounds = np.array([[39.5, 42.5], [-45.8, 43.5]])
 
         if not sample_goal:
             x = np.clip(np.random.rand() * (better_bounds[0, 1] - better_bounds[0, 0]
@@ -112,13 +114,19 @@ class PathPlanner:
                                             ) + better_bounds[1, 0], better_bounds[1, 0], better_bounds[1, 1])
             point = np.array([[x], [y]])
         else:
-            dx = 2.5 * self.stopping_dist * np.random.randn()
-            dy = 2.5 * self.stopping_dist * np.random.randn()
-            x = np.clip(self.goal_point[0, 0] + dx,
-                        better_bounds[0, 0], better_bounds[0, 1])
-            y = np.clip(self.goal_point[1, 0] + dy,
-                        better_bounds[1, 0], better_bounds[1, 1])
-            point = np.array([[x], [y]])
+            sample_goal_far = np.random.rand() < 0.35
+            if not sample_goal_far:
+                x = np.clip(np.random.rand() * (far_bounds[0, 1] - far_bounds[0, 0]
+                                            ) + far_bounds[0, 0], far_bounds[0, 0], far_bounds[0, 1])
+                y = np.clip(np.random.rand() * (far_bounds[1, 1] - far_bounds[1, 0]
+                                            ) + far_bounds[1, 0], far_bounds[1, 0], far_bounds[1, 1])
+                point = np.array([[x], [y]])
+            else:
+                x = np.clip(np.random.rand() * (near_bounds[0, 1] - near_bounds[0, 0]
+                                            ) + near_bounds[0, 0], near_bounds[0, 0], near_bounds[0, 1])
+                y = np.clip(np.random.rand() * (near_bounds[1, 1] - near_bounds[1, 0]
+                                            ) + near_bounds[1, 0], near_bounds[1, 0], near_bounds[1, 1])
+                point = np.array([[x], [y]])
 
         return point
 
@@ -573,7 +581,7 @@ class PathPlanner:
 
                                 temp_pt = np.array(trajectory_node[0:2, :]).copy().T
                                 temp_pt_old = np.array(trajectory_old[0:2, :]).copy().T
-                                self.window.add_se2_pose(np.array(trajectory_node[:, -1].reshape((3,))))
+                                # self.window.add_se2_pose(np.array(trajectory_node[:, -1].reshape((3,))))
                                 # for i in temp_pt:
                                 #     self.window.add_point(i)
 
