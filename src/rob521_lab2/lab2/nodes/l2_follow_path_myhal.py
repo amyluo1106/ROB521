@@ -28,7 +28,7 @@ COLLISION_RADIUS = 0.225  # m, radius from base_link to use for collisions, min 
 ROT_DIST_MULT = .1  # multiplier to change effect of rotational distance in choosing correct control
 OBS_DIST_MULT = .1  # multiplier to change the effect of low distance to obstacles on a path
 MIN_TRANS_DIST_TO_USE_ROT = TRANS_GOAL_TOL  # m, robot has to be within this distance to use rot distance in cost
-PATH_NAME = 'shortest_path_myhal_rrtstar.npy'  # saved path from l2_planning.py, should be in the same directory as this file
+PATH_NAME = 'shortest_path_myhal_new.npy'  # saved path from l2_planning.py, should be in the same directory as this file
 
 # here are some hardcoded paths to use if you want to develop l2_planning and this file in parallel
 # TEMP_HARDCODE_PATH = [[2, 0, 0], [2.75, -1, -np.pi/2], [2.75, -4, -np.pi/2], [2, -4.4, np.pi]]  # almost collision-free
@@ -191,24 +191,46 @@ class PathFollower():
             self.rate.sleep()
 
     def trajectory_rollout(self, vel, rot_vel, pos, fix_col, num_substeps, timestep):
-        t = np.linspace(0, timestep, num_substeps)[None, :]
-        x0 = pos[0:1]
-        y0 = pos[1:2] 
-        theta0 = pos[2:3]
+        # Generate time steps for the trajectory
+        timesteps = np.linspace(0, timestep, num_substeps)[None, :]
 
-        x = np.zeros((rot_vel.shape[0], t.shape[1]))
-        y = np.zeros((rot_vel.shape[0], t.shape[1]))
+        # Extract initial positions (x0, y0, theta0) from the 'pos' array
+        x0, y0, theta0 = pos[0], pos[1], pos[2]
 
-        # with warnings.catch_warnings():
-        #     warnings.filterwarnings("ignore", category=RuntimeWarning) 
-        x = np.where(np.isclose(rot_vel, 0), vel*t*np.cos(theta0) + x0, x0 + (vel / rot_vel) * (np.sin(rot_vel*t + theta0) - np.sin(theta0)))
-        y = np.where(np.isclose(rot_vel, 0), vel*t*np.sin(theta0) + y0, y0 - (vel / rot_vel) * (np.cos(rot_vel*t + theta0) - np.cos(theta0)))
-        
-        theta = np.where(np.isclose(rot_vel, 0), theta0 * np.ones_like(rot_vel*t), theta0 + rot_vel*t)
+        # Initialize arrays to store x and y coordinates of the trajectory
+        x = np.zeros((rot_vel.shape[0], timesteps.shape[1]))
+        y = np.zeros((rot_vel.shape[0], timesteps.shape[1]))
+        theta = np.zeros((rot_vel.shape[0], timesteps.shape[1]))
 
-        traj = np.stack((x, y, theta), axis = -1) 
+        # Loop over each element of rot_vel
+        for i in range(rot_vel.shape[0]):
+            for j in range(timesteps.shape[1]):
+                # Check if rot_vel is close to 0
+                if abs(rot_vel[i]) >= 1:
+                    temp_rot_vel = np.sign(rot_vel[i]) * 1
+                else:
+                    temp_rot_vel = rot_vel[i]
 
-        return traj
+                if abs(temp_rot_vel) <= 0.20:
+                    # Calculate x coordinates
+                    x[i, j] = vel[i] * timesteps[0, j] * np.cos(theta0) + x0
+                    # Calculate y coordinates
+                    y[i, j] = vel[i] * timesteps[0, j] * np.sin(theta0) + y0
+                    # Set theta values
+                    theta[i, j] = theta0 * np.ones_like(temp_rot_vel * timesteps[0, j])
+                else:
+                    # Calculate x coordinates
+                    x[i, j] = x0 + (vel[i] / temp_rot_vel) * (np.sin(temp_rot_vel * timesteps[0, j] + theta0) - np.sin(theta0))
+                    # Calculate y coordinates
+                    y[i, j] = y0 - (vel[i] / temp_rot_vel) * (np.cos(temp_rot_vel * timesteps[0, j] + theta0) - np.cos(theta0))
+                    # Set theta values
+                    theta[i, j] = theta0 + temp_rot_vel * timesteps[0, j]
+
+        # Stack x, y, and theta arrays to form the trajectory array
+        trajectory = np.stack((x, y, theta), axis=-1)
+
+        # Return the generated trajectory
+        return trajectory
 
     def update_pose(self):
         # Update numpy poses with current pose using the tf_buffer
