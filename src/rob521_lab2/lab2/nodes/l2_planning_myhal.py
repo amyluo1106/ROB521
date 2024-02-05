@@ -66,7 +66,7 @@ class PathPlanner:
         # Robot information
         self.robot_radius = 0.22  # m
         self.vel_max = 0.25 # 0.5  # m/s (Feel free to change!)
-        self.rot_vel_max = 0.69 # 0.2  # rad/s (Feel free to change!)
+        self.rot_vel_max = 0.2 # 0.2  # rad/s (Feel free to change!)
 
         # Goal Parameters
         self.goal_point = goal_point  # m
@@ -74,7 +74,7 @@ class PathPlanner:
         self.flag = 0
 
         # Trajectory Simulation Parameters
-        self.timestep = 2.0  # s
+        self.timestep = 1.0  # s
         self.num_substeps = 10
 
         # Planning storage
@@ -92,8 +92,12 @@ class PathPlanner:
         self.epsilon = 2.5
 
         # Pygame window for visualization
+        # self.window = pygame_utils.PygameWindow(
+        #     "Path Planner", (1000, 1000), self.occupancy_map.shape, self.map_settings_dict, self.goal_point, self.stopping_dist)
+
         self.window = pygame_utils.PygameWindow(
-            "Path Planner", (1000, 1000), self.occupancy_map.shape, self.map_settings_dict, self.goal_point, self.stopping_dist)
+                "Path Planner", (795, 245), self.occupancy_map.T.shape, self.map_settings_dict, self.goal_point, self.stopping_dist)
+        
         return
 
     # Functions required for RRT
@@ -103,30 +107,37 @@ class PathPlanner:
         # print("TO DO: Sample point to drive towards")
 
         sample_goal = np.random.rand() < 0.1
-        better_bounds = np.array([[0.0, 44], [-47, 11]])
-        far_bounds = np.array([[38, 39.5], [-45.8, 43.5]])
-        near_bounds = np.array([[39.5, 42.5], [-45.8, 43.5]])
+        # better_bounds = np.array([[0.0, 44], [-47, 11]])
+        better_bounds = self.bounds
+        # far_bounds = np.array([[38, 39.5], [-45.8, 43.5]])
+        # near_bounds = np.array([[39.5, 42.5], [-45.8, 43.5]])
 
-        if not sample_goal:
-            x = np.clip(np.random.rand() * (better_bounds[0, 1] - better_bounds[0, 0]
-                                            ) + better_bounds[0, 0], better_bounds[0, 0], better_bounds[0, 1])
-            y = np.clip(np.random.rand() * (better_bounds[1, 1] - better_bounds[1, 0]
-                                            ) + better_bounds[1, 0], better_bounds[1, 0], better_bounds[1, 1])
-            point = np.array([[x], [y]])
-        else:
-            sample_goal_far = np.random.rand() < 0.35
-            if not sample_goal_far:
-                x = np.clip(np.random.rand() * (far_bounds[0, 1] - far_bounds[0, 0]
-                                            ) + far_bounds[0, 0], far_bounds[0, 0], far_bounds[0, 1])
-                y = np.clip(np.random.rand() * (far_bounds[1, 1] - far_bounds[1, 0]
-                                            ) + far_bounds[1, 0], far_bounds[1, 0], far_bounds[1, 1])
-                point = np.array([[x], [y]])
-            else:
-                x = np.clip(np.random.rand() * (near_bounds[0, 1] - near_bounds[0, 0]
-                                            ) + near_bounds[0, 0], near_bounds[0, 0], near_bounds[0, 1])
-                y = np.clip(np.random.rand() * (near_bounds[1, 1] - near_bounds[1, 0]
-                                            ) + near_bounds[1, 0], near_bounds[1, 0], near_bounds[1, 1])
-                point = np.array([[x], [y]])
+        # if not sample_goal:
+            # x = np.clip(np.random.rand() * (better_bounds[0, 1] - better_bounds[0, 0]
+            #                                 ) + better_bounds[0, 0], better_bounds[0, 0], better_bounds[0, 1])
+            # y = np.clip(np.random.rand() * (better_bounds[1, 1] - better_bounds[1, 0]
+            #                                 ) + better_bounds[1, 0], better_bounds[1, 0], better_bounds[1, 1])
+            # point = np.array([[x], [y]])
+        # else:
+        #     sample_goal_far = np.random.rand() < 0.35
+        #     if not sample_goal_far:
+        #         x = np.clip(np.random.rand() * (far_bounds[0, 1] - far_bounds[0, 0]
+        #                                     ) + far_bounds[0, 0], far_bounds[0, 0], far_bounds[0, 1])
+        #         y = np.clip(np.random.rand() * (far_bounds[1, 1] - far_bounds[1, 0]
+        #                                     ) + far_bounds[1, 0], far_bounds[1, 0], far_bounds[1, 1])
+        #         point = np.array([[x], [y]])
+        #     else:
+        #         x = np.clip(np.random.rand() * (near_bounds[0, 1] - near_bounds[0, 0]
+        #                                     ) + near_bounds[0, 0], near_bounds[0, 0], near_bounds[0, 1])
+        #         y = np.clip(np.random.rand() * (near_bounds[1, 1] - near_bounds[1, 0]
+        #                                     ) + near_bounds[1, 0], near_bounds[1, 0], near_bounds[1, 1])
+        #         point = np.array([[x], [y]])
+
+        x = np.random.rand() * (better_bounds[0, 1] - better_bounds[0, 0]
+                                        ) + better_bounds[0, 0]
+        y = np.random.rand() * (better_bounds[1, 1] - better_bounds[1, 0]
+                                        ) + better_bounds[1, 0]
+        point = np.array([[x], [y]])
 
         return point
 
@@ -159,11 +170,19 @@ class PathPlanner:
 
     def check_collision(self, robot_traj):
 
-        r, c = self.points_to_robot_circle(robot_traj[:2])
-        fp = np.clip(np.moveaxis(
-            np.array([r, c]), 0, 2), 0, np.array(self.map_shape) - 1)
+        # r, c = self.points_to_robot_circle(robot_traj[:2])
+        # fp = np.clip(np.moveaxis(
+        #     np.array([r, c]), 0, 2), 0, np.array(self.map_shape) - 1)
 
-        return not np.all(self.occupancy_map[fp[..., 1], fp[..., 0]])
+        # return not np.all(self.occupancy_map[fp[..., 1], fp[..., 0]])
+
+        traj_rr, traj_cc = self.points_to_robot_circle(
+            robot_traj[0:2, :])  # center and radius of trajectory in occupacy map
+        footprint = np.moveaxis(np.array([traj_rr, traj_cc]), 0, 2)
+        temp_x = np.clip(footprint[..., 1], 0, self.map_shape[0] - 1)
+        temp_y = np.clip(footprint[..., 0], 0, self.map_shape[1] - 1)
+
+        return np.any(np.any(self.occupancy_map[temp_x, temp_y] == 0, axis=-1))
 
     def simulate_trajectory(self, node_i, point_s):
         # Simulates the non-holonomic motion of the robot.
@@ -611,20 +630,20 @@ class PathPlanner:
 
 def main():
     # Set map information
-    map_filename = "willowgarageworld_05res.png"
-    # map_filename = "myhal.png"
-    map_setings_filename = "willowgarageworld_05res.yaml"
-    # map_setings_filename = "myhal.yaml"
+    # map_filename = "willowgarageworld_05res.png"
+    map_filename = "myhal.png"
+    # map_setings_filename = "willowgarageworld_05res.yaml"
+    map_setings_filename = "myhal.yaml"
 
     # robot information
-    goal_point = np.array([[42], [-44]]) #m
-    #goal_point = np.array([[10], [0]])  # m
+    # goal_point = np.array([[42], [-44]]) #m
+    goal_point = np.array([[7], [0]])  # m
     stopping_dist = 0.5  # m
 
     # RRT precursor
     path_planner = PathPlanner(map_filename, map_setings_filename, goal_point, stopping_dist)
-    # nodes = path_planner.rrt_star_planning()
-    nodes = path_planner.rrt_planning()
+    nodes = path_planner.rrt_star_planning()
+    # nodes = path_planner.rrt_planning()
     node_path_metric = np.hstack(path_planner.recover_path())
 
     # Leftover test functions
