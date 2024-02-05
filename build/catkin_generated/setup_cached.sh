@@ -7,4 +7,7 @@
 # new environment variables
 
 # modified environment variables
-export PWD='/home/rob521_1/catkin_ws/build'
+export LD_LIBRARY_PATH='/opt/ros/noetic/lib'
+export PKG_CONFIG_PATH='/opt/ros/noetic/lib/pkgconfig'
+export PWD='/home/amy/catkin_ws/build'
+export ROS_PACKAGE_PATH='/home/amy/catkin_ws/src:/opt/ros/noetic/share'

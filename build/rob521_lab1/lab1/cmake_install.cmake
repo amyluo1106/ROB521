@@ -1,8 +1,8 @@
-# Install script for directory: /home/rob521_1/catkin_ws/src/rob521_lab1/lab1
+# Install script for directory: /home/amy/catkin_ws/src/rob521_lab1/lab1
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/rob521_1/catkin_ws/install")
+  set(CMAKE_INSTALL_PREFIX "/home/amy/catkin_ws/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -38,25 +38,25 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/rob521_1/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/rob521_lab1.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/amy/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/rob521_lab1.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rob521_lab1/cmake" TYPE FILE FILES
-    "/home/rob521_1/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/rob521_lab1Config.cmake"
-    "/home/rob521_1/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/rob521_lab1Config-version.cmake"
+    "/home/amy/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/rob521_lab1Config.cmake"
+    "/home/amy/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/rob521_lab1Config-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rob521_lab1" TYPE FILE FILES "/home/rob521_1/catkin_ws/src/rob521_lab1/lab1/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rob521_lab1" TYPE FILE FILES "/home/amy/catkin_ws/src/rob521_lab1/lab1/package.xml")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/rob521_lab1" TYPE PROGRAM FILES "/home/rob521_1/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/l1_motor.py")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/rob521_lab1" TYPE PROGRAM FILES "/home/amy/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/l1_motor.py")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/rob521_lab1" TYPE PROGRAM FILES "/home/rob521_1/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/l1_odometry.py")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/rob521_lab1" TYPE PROGRAM FILES "/home/amy/catkin_ws/build/rob521_lab1/lab1/catkin_generated/installspace/l1_odometry.py")
 endif()
 

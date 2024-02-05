@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/rob521_1/catkin_ws/src
+CMAKE_SOURCE_DIR = /home/amy/catkin_ws/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/rob521_1/catkin_ws/build
+CMAKE_BINARY_DIR = /home/amy/catkin_ws/build
 
 # Utility rule file for std_msgs_generate_messages_lisp.
 
@@ -63,10 +63,10 @@ rob521_lab1/lab1/CMakeFiles/std_msgs_generate_messages_lisp.dir/build: std_msgs_
 .PHONY : rob521_lab1/lab1/CMakeFiles/std_msgs_generate_messages_lisp.dir/build
 
 rob521_lab1/lab1/CMakeFiles/std_msgs_generate_messages_lisp.dir/clean:
-	cd /home/rob521_1/catkin_ws/build/rob521_lab1/lab1 && $(CMAKE_COMMAND) -P CMakeFiles/std_msgs_generate_messages_lisp.dir/cmake_clean.cmake
+	cd /home/amy/catkin_ws/build/rob521_lab1/lab1 && $(CMAKE_COMMAND) -P CMakeFiles/std_msgs_generate_messages_lisp.dir/cmake_clean.cmake
 .PHONY : rob521_lab1/lab1/CMakeFiles/std_msgs_generate_messages_lisp.dir/clean
 
 rob521_lab1/lab1/CMakeFiles/std_msgs_generate_messages_lisp.dir/depend:
-	cd /home/rob521_1/catkin_ws/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/rob521_1/catkin_ws/src /home/rob521_1/catkin_ws/src/rob521_lab1/lab1 /home/rob521_1/catkin_ws/build /home/rob521_1/catkin_ws/build/rob521_lab1/lab1 /home/rob521_1/catkin_ws/build/rob521_lab1/lab1/CMakeFiles/std_msgs_generate_messages_lisp.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/amy/catkin_ws/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/amy/catkin_ws/src /home/amy/catkin_ws/src/rob521_lab1/lab1 /home/amy/catkin_ws/build /home/amy/catkin_ws/build/rob521_lab1/lab1 /home/amy/catkin_ws/build/rob521_lab1/lab1/CMakeFiles/std_msgs_generate_messages_lisp.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : rob521_lab1/lab1/CMakeFiles/std_msgs_generate_messages_lisp.dir/depend
 

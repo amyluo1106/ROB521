@@ -67,14 +67,14 @@ set(rob521_lab1_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("FALSE" STREQUAL "TRUE")
-  set(rob521_lab1_SOURCE_PREFIX /home/rob521_1/catkin_ws/src/rob521_lab1/lab1)
-  set(rob521_lab1_DEVEL_PREFIX /home/rob521_1/catkin_ws/devel)
+  set(rob521_lab1_SOURCE_PREFIX /home/amy/catkin_ws/src/rob521_lab1/lab1)
+  set(rob521_lab1_DEVEL_PREFIX /home/amy/catkin_ws/devel)
   set(rob521_lab1_INSTALL_PREFIX "")
   set(rob521_lab1_PREFIX ${rob521_lab1_DEVEL_PREFIX})
 else()
   set(rob521_lab1_SOURCE_PREFIX "")
   set(rob521_lab1_DEVEL_PREFIX "")
-  set(rob521_lab1_INSTALL_PREFIX /home/rob521_1/catkin_ws/install)
+  set(rob521_lab1_INSTALL_PREFIX /home/amy/catkin_ws/install)
   set(rob521_lab1_PREFIX ${rob521_lab1_INSTALL_PREFIX})
 endif()
 
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/rob521_1/catkin_ws/install/lib;/home/rob521_1/catkin_ws/devel/lib;/opt/ros/noetic/lib)
+    foreach(path /home/amy/catkin_ws/install/lib;/home/amy/catkin_ws/devel/lib;/opt/ros/noetic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)

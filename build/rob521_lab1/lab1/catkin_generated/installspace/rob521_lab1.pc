@@ -1,4 +1,4 @@
-prefix=/home/rob521_1/catkin_ws/install
+prefix=/home/amy/catkin_ws/install
 
 Name: rob521_lab1
 Description: Description of rob521_lab1

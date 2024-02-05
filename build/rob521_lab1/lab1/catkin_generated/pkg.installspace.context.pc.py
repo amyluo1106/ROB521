@@ -4,5 +4,5 @@ PROJECT_PKG_CONFIG_INCLUDE_DIRS = "".split(';') if "" != "" else []
 PROJECT_CATKIN_DEPENDS = "rospy;std_msgs;geometry_msgs;nav_msgs".replace(';', ' ')
 PKG_CONFIG_LIBRARIES_WITH_PREFIX = "".split(';') if "" != "" else []
 PROJECT_NAME = "rob521_lab1"
-PROJECT_SPACE_DIR = "/home/rob521_1/catkin_ws/install"
+PROJECT_SPACE_DIR = "/home/amy/catkin_ws/install"
 PROJECT_VERSION = "1.0.0"
