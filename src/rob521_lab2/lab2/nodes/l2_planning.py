@@ -64,7 +64,7 @@ class PathPlanner:
             self.map_shape[0] * self.map_settings_dict["resolution"]
 
         # Robot information
-        self.robot_radius = 0.22  # m
+        self.robot_radius = 0.3  # m
         self.vel_max = 0.55 # 0.5  # m/s (Feel free to change!)
         self.rot_vel_max = 0.2 # 0.2  # rad/s (Feel free to change!)
 
@@ -639,14 +639,14 @@ class PathPlanner:
 
 def main():
     # Set map information
-    map_filename = "willowgarageworld_05res.png"
-    # map_filename = "myhal.png"
-    map_setings_filename = "willowgarageworld_05res.yaml"
-    # map_setings_filename = "myhal.yaml"
+    # map_filename = "willowgarageworld_05res.png"
+    map_filename = "myhal.png"
+    # map_setings_filename = "willowgarageworld_05res.yaml"
+    map_setings_filename = "myhal.yaml"
 
     # robot information
     # goal_point = np.array([[42], [-44]]) #m
-    goal_point = np.array([[10], [0]])  # m
+    goal_point = np.array([[7], [0]])  # m
     stopping_dist = 0.5  # m
 
     # RRT precursor

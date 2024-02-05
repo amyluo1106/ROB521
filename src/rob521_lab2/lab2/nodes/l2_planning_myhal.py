@@ -64,7 +64,7 @@ class PathPlanner:
             self.map_shape[0] * self.map_settings_dict["resolution"]
 
         # Robot information
-        self.robot_radius = 0.22  # m
+        self.robot_radius = 0.3  # m (increase radius to account for physical environment discrepancies)
         self.vel_max = 0.25 # 0.5  # m/s (Feel free to change!)
         self.rot_vel_max = 0.2 # 0.2  # rad/s (Feel free to change!)
 
@@ -96,7 +96,7 @@ class PathPlanner:
         #     "Path Planner", (1000, 1000), self.occupancy_map.shape, self.map_settings_dict, self.goal_point, self.stopping_dist)
 
         self.window = pygame_utils.PygameWindow(
-                "Path Planner", (795, 245), self.occupancy_map.T.shape, self.map_settings_dict, self.goal_point, self.stopping_dist)
+                "Path Planner", (800, 250), self.occupancy_map.T.shape, self.map_settings_dict, self.goal_point, self.stopping_dist)
         
         return
 
