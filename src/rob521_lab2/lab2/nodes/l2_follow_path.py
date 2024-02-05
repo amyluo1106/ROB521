@@ -114,7 +114,6 @@ class PathFollower():
 
         rospy.on_shutdown(self.stop_robot_on_shutdown)
 
-
         self.prev_control = None
         self.prev_path = None
 
