@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Standard Libraries
 import numpy as np
+import os
 import yaml
 import pygame
 import time
@@ -13,7 +14,7 @@ import scipy.spatial as sp
 import matplotlib.pyplot as plt
 import math
 
-np.random.seed(11)
+# np.random.seed(11)
 
 COLORS = dict(
     w=(255, 255, 255),
@@ -817,26 +818,31 @@ def main():
     # robot information
     # goal_point = np.array([[3], [-10]])  # m
     # goal_point = np.array([[7], [0]])  # m
-    goal_point = np.array([[1], [-1]])  # m
+    goal_point = np.array([[42], [-44]])  # m
     stopping_dist = 0.5  # m
 
     # RRT precursor
     path_planner = PathPlanner(map_filename, map_setings_filename, goal_point, stopping_dist)
 
-    nodes = path_planner.rrt_planning()
-    # nodes = path_planner.rrt_star_planning()
+    #nodes = path_planner.rrt_planning()
+    nodes = path_planner.rrt_star_planning()
     node_path_metric = np.hstack(path_planner.recover_path())
 
     # Leftover test functions
     np.save("shortest_path_rrtstar.npy", node_path_metric)
     # np.save("shortest_path_rrt.npy", node_path_metric)
     # np.save("shortest_path_rrtstar_myhal.npy", node_path_metric)
+    # Plot path
+    path = "./shortest_path_rrtstar.npy"
+    filename = os.path.splitext(os.path.split(path)[-1])[0]
+    path = np.load(path).T[:, :, None]
+    for p1, p2 in zip(path[:-1], path[1:]):
+        path_planner.window.add_line(
+            p1[:2, 0].copy(), p2[:2, 0].copy(), width=5, color=(255, 0, 0))
 
-    # print(nodes)
-    for i in nodes:
-        print(i)
-        path_planner.window.add_point(np.array(i[:2]).reshape(2, ), radius=4, width=0, color=COLORS['r'])
-    path_planner.window.display()
+    pygame.image.save(path_planner.window.screen, f"{filename}.png")
+    input()
+
 
 
 if __name__ == '__main__':

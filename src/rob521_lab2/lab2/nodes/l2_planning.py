@@ -14,7 +14,7 @@ import math
 import scipy.spatial as sp
 import os
 
-np.random.seed(4)
+#np.random.seed(4)
 
 def load_map(filename):
     im = mpimg.imread("../maps/" + filename)
@@ -102,7 +102,7 @@ class PathPlanner:
         # Return an [x,y] coordinate to drive the robot towards
         # print("TO DO: Sample point to drive towards")
 
-        sample_goal = np.random.rand() < 0.05
+        sample_goal = np.random.rand() < 0.1
         better_bounds = np.array([[0.0, 44], [-47, 11]])
 
         if not sample_goal:
@@ -112,8 +112,8 @@ class PathPlanner:
                                             ) + better_bounds[1, 0], better_bounds[1, 0], better_bounds[1, 1])
             point = np.array([[x], [y]])
         else:
-            dx = 4 * self.stopping_dist * np.random.randn()
-            dy = 4 * self.stopping_dist * np.random.randn()
+            dx = 2.5 * self.stopping_dist * np.random.randn()
+            dy = 2.5 * self.stopping_dist * np.random.randn()
             x = np.clip(self.goal_point[0, 0] + dx,
                         better_bounds[0, 0], better_bounds[0, 1])
             y = np.clip(self.goal_point[1, 0] + dy,
@@ -126,7 +126,7 @@ class PathPlanner:
         # Check if point is a duplicate of an already existing node
         # print("TO DO: Check that nodes are not duplicates")
 
-        threshold = 0.2
+        threshold = 0.15
         for node in self.nodes:
             if np.linalg.norm(node.point.reshape(3, ) - point) <= threshold:
                 return True
@@ -403,6 +403,9 @@ class PathPlanner:
 
         return cost
 
+        # dist = np.linalg.norm(trajectory_o[1:, :2] - trajectory_o[:-1, :2], axis = -1).sum()
+        # return dist
+
     def update_children(self, node_id):
         # Given a node_id with a changed cost, update all connected nodes with the new cost
         # print("TO DO: Update the costs of connected nodes after rewiring.")
@@ -491,8 +494,7 @@ class PathPlanner:
 
                 # add node
                 self.nodes[closest_node_id].children_ids.append(self.nodes[-1].tag + 1)
-                self.nodes.append(
-                    Node(np.array(trajectory_o[:, -1].reshape((3, 1))), closest_node_id, cost, self.nodes[-1].tag + 1))
+                self.nodes.append(Node(np.array(trajectory_o[:, -1].reshape((3, 1))), closest_node_id, cost, self.nodes[-1].tag + 1))
                 self.nodes[-1].traj = trajectory_o[:3, :].reshape((3, 10))
                 N = 10
                 R = 3.5
@@ -500,7 +502,7 @@ class PathPlanner:
                     n_closest_nodes = self.closest_node(pt, N)
                     closest_nodes = []
                     for nodes in n_closest_nodes:
-                        if np.linalg.norm(self.nodes[nodes].point[0:2] - point) <= R:
+                        if np.linalg.norm(self.nodes[nodes].point[:2] - point) <= R:
                             closest_nodes.append(nodes)
                     cost_min = cost
                     cost_min_id = closest_node_id
@@ -572,8 +574,8 @@ class PathPlanner:
                                 temp_pt = np.array(trajectory_node[0:2, :]).copy().T
                                 temp_pt_old = np.array(trajectory_old[0:2, :]).copy().T
                                 self.window.add_se2_pose(np.array(trajectory_node[:, -1].reshape((3,))))
-                                for i in temp_pt:
-                                    self.window.add_point(i)
+                                # for i in temp_pt:
+                                #     self.window.add_point(i)
 
                 # visualize
                 temp_pt = np.array(trajectory_o[0:2, :]).copy().T
@@ -582,14 +584,12 @@ class PathPlanner:
                     self.window.add_point(i)
 
                 # Check if goal has been reached
-                [x, y] = [trajectory_o[0, -1], trajectory_o[1, -1]]
-                x_d = x - self.goal_point[0]
-                y_d = y - self.goal_point[1]
-                if abs(math.sqrt(x_d ** 2 + y_d ** 2)) < self.stopping_dist:
+                coords = [trajectory_o[0, -1], trajectory_o[1, -1]]
+                if abs(euclidean(np.ravel(self.goal_point), coords)) < self.stopping_dist:
                     print("rrt star success")
                     print("iterations: ", counter)
                     return self.recover_path()
-            counter += 1
+                counter += 1
 
     def recover_path(self, node_id=-1):
         path = [self.nodes[node_id].point]
@@ -616,7 +616,7 @@ def main():
     # RRT precursor
     path_planner = PathPlanner(map_filename, map_setings_filename, goal_point, stopping_dist)
     nodes = path_planner.rrt_star_planning()
-    #nodes = path_planner.rrt_planning()
+    # nodes = path_planner.rrt_planning()
     node_path_metric = np.hstack(path_planner.recover_path())
 
     # Leftover test functions
