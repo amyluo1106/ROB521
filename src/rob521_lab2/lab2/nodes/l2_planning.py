@@ -10,6 +10,7 @@ from skimage.draw import disk
 from scipy.linalg import block_diag
 import math
 import scipy
+import scipy.spatial as sp
 
 def load_map(filename):
     im = mpimg.imread("../maps/" + filename)
