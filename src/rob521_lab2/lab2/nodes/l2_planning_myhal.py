@@ -319,7 +319,7 @@ class PathPlanner:
     def ball_radius(self):
         # Close neighbor distance
         card_V = len(self.nodes)
-        return min(self.gamma_RRT * (np.log(card_V) / card_V) ** (1.0/2.0), self.epsilon)
+        return min((self.gamma_RRT * (np.log(card_V) / card_V) ** (1.0/2.0))/2, self.epsilon/2)
 
     def connect_node_to_point(self, node_i, point_f):
         # Given two nodes find the non-holonomic path that connects them
@@ -638,7 +638,7 @@ def main():
     # robot information
     # goal_point = np.array([[42], [-44]]) #m
     goal_point = np.array([[7], [0]])  # m
-    stopping_dist = 0.5  # m
+    stopping_dist = 0.1  # m
 
     # RRT precursor
     path_planner = PathPlanner(map_filename, map_setings_filename, goal_point, stopping_dist)
