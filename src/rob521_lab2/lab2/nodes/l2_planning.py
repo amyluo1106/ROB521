@@ -14,11 +14,7 @@ import math
 import scipy.spatial as sp
 import os
 
-<<<<<<< HEAD
-np.random.seed(77)
-=======
 np.random.seed(15)
->>>>>>> 94bc10f73e38dcbe68c2f61352d5e8e07f4d967b
 
 def load_map(filename):
     im = mpimg.imread("../maps/" + filename)
@@ -141,34 +137,20 @@ class PathPlanner:
         # Check if point is a duplicate of an already existing node
         # print("TO DO: Check that nodes are not duplicates")
 
-        # threshold = 0.15
-        # for node in self.nodes:
-        #     if np.linalg.norm(node.point.reshape(3, ) - point) <= threshold:
-        #         return True
-        # return False
-
+        # Define the threshold for proximity checking
         threshold = 0.15
+
+        # Calculate Euclidean distances between the given point and all points in the tree nodes
         distances = [euclidean(node.point.reshape(3, ), point) for node in self.nodes]
+
+        # Check if any of the distances are less than or equal to the threshold
         return any(dist <= threshold for dist in distances)
 
     def closest_node(self, point, n=1):
         # print(point)
         # Returns the index of the closest node
 
-        # kdtree = sp.cKDTree(np.stack([node.point[:2, :]
-        #                     for node in self.nodes], axis=0).squeeze(-1))
-        # d, i = kdtree.query(point.T, k=n)
-
-        # i = np.array(i)
-        # if len(i.shape) > 1:
-        #     i = list(filter(lambda a: a != len(self.nodes), i[0]))
-
-        #     if len(i) < n:
-        #         return i
-
-        # return i[:n]
-
-        # Prepare points for KDTree
+        # Points for KDTree
         points = np.stack([node.point[:2].flatten() for node in self.nodes], axis=0)
 
         # Create KDTree
@@ -181,24 +163,19 @@ class PathPlanner:
         if len(i.shape) > 1:
             i = i[0][i[0] != len(self.nodes)]
 
-        # Return up to n nearest neighbors
         return i[:n]
 
-    def check_collision(self, robot_traj):
+    def check_collision(self, trajectory_robot):
 
-        # r, c = self.points_to_robot_circle(robot_traj[:2])
-        # fp = np.clip(np.moveaxis(
-        #     np.array([r, c]), 0, 2), 0, np.array(self.map_shape) - 1)
+        # Convert trajectory points to robot circle (r, c)
+        r, c = self.points_to_robot_circle(trajectory_robot[:2])
 
-        # return not np.all(self.occupancy_map[fp[..., 1], fp[..., 0]])
+        # Create footprint (fp) by moving axis and clipping within map boundaries
+        fp = np.clip(np.moveaxis(np.array([r, c]), 0, 2), 0, np.array(self.map_shape) - 1)
 
-        traj_rr, traj_cc = self.points_to_robot_circle(
-            robot_traj[0:2, :])  # center and radius of trajectory in occupacy map
-        footprint = np.moveaxis(np.array([traj_rr, traj_cc]), 0, 2)
-        temp_x = np.clip(footprint[..., 1], 0, self.map_shape[0] - 1)
-        temp_y = np.clip(footprint[..., 0], 0, self.map_shape[1] - 1)
-
-        return np.any(np.any(self.occupancy_map[temp_x, temp_y] == 0, axis=-1))
+        # Check if all points in the occupancy map are occupied
+        # If any point is free, return True; otherwise, return False
+        return not np.all(self.occupancy_map[fp[..., 1], fp[..., 0]])
 
     def simulate_trajectory(self, node_i, point_s):
         # Simulates the non-holonomic motion of the robot.
@@ -207,35 +184,47 @@ class PathPlanner:
         # point_s is the sampled point vector [x; y]
         # print("TO DO: Implment a method to simulate a trajectory given a sampled point")
 
+        # Get velocity and rotation velocity from the robot controller
         vel, rot_vel = self.robot_controller(node_i, point_s)
-        # 10 for sim
+
+        # Define constants for the loop
+        RANGE_LOOP = 21
+        LIMIT = 10
+
+        # Check if the distance to the goal is greater than 1
         if abs(euclidean(np.ravel(self.goal_point), np.ravel(node_i[:2])) > 1):
-            robot_traj = self.trajectory_rollout(
-                vel, rot_vel, node_i[0], node_i[1], node_i[2])
+            # Generate trajectory using the given velocity and rotation velocity
+            trajectory_robot = self.trajectory_rollout(vel, rot_vel, node_i[0], node_i[1], node_i[2])
         else:
-            # confused?
-            min_dist_goal = float("inf")
-            robot_traj = None
-            for i in range(1, 11):
-                if i <= 5:
-                    robot_traj = self.trajectory_rollout(
-                        vel, rot_vel + (i * 0.025), node_i[0], node_i[1], node_i[2])
+            # Initialize minimum distance to goal and trajectory_robot
+            d_min = float("inf")
+            trajectory_robot = None
+            # Iterate through the range loop
+            for i in range(1, RANGE_LOOP):
+                if i <= LIMIT:
+                    # Adjust rotation velocity to rotate in opposite directions
+                    trajectory_robot = self.trajectory_rollout(
+                        vel, rot_vel + (i * 0.037), node_i[0], node_i[1], node_i[2])
                 else:
-                    robot_traj = self.trajectory_rollout(
-                        vel, rot_vel - ((i - 5) * 0.025), node_i[0], node_i[1], node_i[2])
-                dist_to_goal = euclidean(
-                    np.ravel(self.goal_point), np.ravel(robot_traj[:, -1])[:2])
-                if robot_traj is None:
-                    min_dist_goal = dist_to_goal
-                    robot_traj = robot_traj
+                    trajectory_robot = self.trajectory_rollout(
+                        vel, rot_vel - ((i - LIMIT) * 0.037), node_i[0], node_i[1], node_i[2])
+                # Calculate the Euclidean distance to the goal
+                d = euclidean(np.ravel(self.goal_point), np.ravel(trajectory_robot[:, -1])[:2])
+                if trajectory_robot is None:
+                    # Update minimum distance to goal and trajectory_robot if necessary
+                    d_min = d
+                    trajectory_robot = trajectory_robot
                 else:
-                    collision = self.check_collision(robot_traj)
-                    duplicate = self.check_if_duplicate(robot_traj[:, -1])
-                    if collision or not duplicate:
-                        if dist_to_goal < min_dist_goal:
-                            min_dist_goal = dist_to_goal
-                            robot_traj = robot_traj
-        return robot_traj
+                    # Check for collision and duplication
+                    collision_detected = self.check_collision(trajectory_robot) or not self.check_if_duplicate(trajectory_robot[:, -1])
+                    if collision_detected and d < d_min:
+                        # Update minimum distance to goal and trajectory_robot if collision detected and distance is less
+                        d_min = d
+                        trajectory_robot = trajectory_robot
+
+        # Return the generated trajectory
+        return trajectory_robot
+
 
     def robot_controller(self, node_i, point_s):
         # This controller determines the velocities that will nominally move the robot from node i to node s
@@ -249,8 +238,9 @@ class PathPlanner:
         # normalize
         heading_error = math.atan2(
             math.sin(heading_error), math.cos(heading_error))
+        
         # tune parameter?
-        rot_vel = -0.4 * np.tan(heading_error)
+        rot_vel = -0.35 * np.tan(heading_error)
 
         # max rotational velocity constraint
         if rot_vel > self.rot_vel_max:
@@ -259,6 +249,7 @@ class PathPlanner:
             rot_vel = -self.rot_vel_max
 
         vel = self.vel_max / (abs(rot_vel) + 1)  # not sure
+
         # max velocity constraint
         if vel > self.vel_max:
             vel = self.vel_max
@@ -276,21 +267,25 @@ class PathPlanner:
         # The returned trajectory should be a series of points to check for collisions
         # print("TO DO: Implement a way to rollout the controls chosen")
 
-        t = np.linspace(0, self.timestep, self.num_substeps)
+        # Generate time steps
+        timesteps = np.linspace(0, self.timestep, self.num_substeps)
+
+        # Initialize initial positions and angles
         x0 = np.ones((1, self.num_substeps)) * x0
         y0 = np.ones((1, self.num_substeps)) * y0
         theta0 = np.ones((1, self.num_substeps)) * theta0
-        if rot_vel == 0:
-            x = vel * t * np.cos(theta0) + x0
-            y = vel * t * np.sin(theta0) + y0
-            theta = rot_vel * t
+
+        # Calculate trajectories based on rotation velocity being low
+        if np.isclose(rot_vel,0):
+            x = vel * timesteps * np.cos(theta0) + x0
+            y = vel * timesteps * np.sin(theta0) + y0
+            theta = rot_vel * timesteps
         else:
-            # don't understand?
-            x = (vel / rot_vel) * \
-                (np.sin(rot_vel * t + theta0) - np.sin(theta0)) + x0
-            y = -(vel / rot_vel) * \
-                (np.cos(rot_vel * t + theta0) - np.cos(theta0)) + y0
-            theta = (rot_vel * t + theta0) % (2 * math.pi)
+            x = (vel / rot_vel) * (np.sin(rot_vel * timesteps + theta0) - np.sin(theta0)) + x0
+            y = -(vel / rot_vel) * (np.cos(rot_vel * timesteps + theta0) - np.cos(theta0)) + y0
+            theta = (rot_vel * timesteps + theta0)
+
+        # Stack
         return np.vstack((x, y, theta))
 
     def point_to_cell(self, point):
@@ -342,92 +337,65 @@ class PathPlanner:
         # Settings
         # node is a 3 by 1 node
         # point is a 2 by 1 point
-        # line 1 through start tangent to theta
+        # line 1 through start_point tangent to theta
         # line 2 normal to line 1
-        # line 3 through start and final
+        # line 3 through start_point and final_point
         # line 4 through midpoint prependicular to line 3
 
-        start = node_i.reshape((3,))[0:2]
-        theta_d = np.arctan2((point_f[1] - node_i[1]), (point_f[0] - node_i[0]))
-        theta = node_i.reshape((3,))[2]
-        heading_error = theta_d - theta
+        # x, y, theta from node_i
+        start_point, theta = node_i.reshape((3,))[:2], node_i.reshape((3,))[2]
 
-        final = point_f.reshape((2,))
-        dist = np.linalg.norm(start - final)
-        string_mid_point = (final - start) / 2 + start
-        s1 = np.tan(theta)
-        if s1 == 0:
-            s2 = 9998
+        final_point = point_f.reshape((2,))
+        # Calculate the midpoint of the string
+        midpoint_string = (final_point - start_point) / 2 + start_point
+
+        # Calculate slopes
+        slope1 = np.tan(theta)
+        slope2 = 9998 if slope1 == 0 else -1 / slope1
+        slope3 = (final_point[1] - start_point[1]) / ((final_point[0] - start_point[0]) + 0.001)
+        slope4 = 9999 if slope3 == 0 else -1 / slope3
+
+        # Calculate y-intercepts
+        y_intercept2 = start_point[1] - slope2 * start_point[0]
+        y_intercept4 = midpoint_string[1] - slope4 * midpoint_string[0]
+
+        # Calculate center of the circle
+        center_x = (y_intercept4 - y_intercept2) / (slope2 - slope4)
+        center_y = center_x * slope2 + y_intercept2
+        center = np.array([center_x, center_y])
+
+        # Calculate radius of the circle
+        radius = np.linalg.norm(start_point - center)
+
+        # Calculate the angle of rotation
+        angle_rotation = -(np.arctan2(start_point[1] - center[1], start_point[0] - center[0]) - (
+                    np.arctan2(final_point[1] - center[1], final_point[0] - center[0])))
+
+        # Calculate sine and cosine of the negative angle
+        sin_theta, cos_theta = np.sin(-angle_rotation), np.cos(-angle_rotation)
+
+        # Create rotation matrix
+        rotation_matrix = np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
+
+        # Transform the center and start point
+        transformed_center_start = rotation_matrix @ center.reshape((2, 1)) + start_point.reshape((2, 1))
+
+        # Adjust angle based on the position of the transformed center and start point
+        if transformed_center_start[1, 0] < 0:
+            angle_rotation = -2 * math.pi + angle_rotation if angle_rotation > 0 else angle_rotation
         else:
-            s2 = -1 / s1
-        s3d = (final[0] - start[0]) + 0.001
-        s3 = (final[1] - start[1]) / s3d
-        if s3 == 0:
-            s4 = 9999
-        else:
-            s4 = -1 / s3
-        y1 = start[1] - s1 * start[0]
-        y2 = start[1] - s2 * start[0]
-        y3 = start[1] - s3 * start[0]
-        y4 = string_mid_point[1] - s4 * string_mid_point[0]
+            angle_rotation = 2 * math.pi + angle_rotation if angle_rotation < 0 else angle_rotation
 
-        cx = (y4 - y2) / (s2 - s4)
-        cy = cx * s2 + y2
-        center = np.array([cx, cy])
-        r = np.linalg.norm(start - center)
+        # Calculate length of trajectory
+        trajectory_length = abs(angle_rotation) * radius
 
-        c = start
-        b = center
-        a = final
+        rot_vel = angle_rotation / self.timestep
+        vel = trajectory_length / self.timestep
 
-        ba = a - b
-        bc = c - b
+        # Generate trajectory based on calculated velocities
+        trajectory = self.trajectory_rollout(vel, rot_vel, x0=start_point[0], y0=start_point[1], theta0=theta)
 
-        angle = -(np.arctan2(start[1] - center[1], start[0] - center[0]) - (
-            np.arctan2(final[1] - center[1], final[0] - center[0])))
-        st = np.sin(-theta)
-        ct = np.cos(-theta)
-        R = np.array([[ct, -st], [st, ct]])
-        c_R = R @ center.reshape((2, 1)) + start.reshape((2, 1))
-        if c_R[1, 0] < 0:
-            if angle > 0:
-                angle = -2 * math.pi + angle
-            else:
-                angle = angle
-
-        else:
-            if angle < 0:
-                angle = 2 * math.pi + angle
-            else:
-                angle = angle
-
-        length = abs(angle) * r
-        ignore_vel_max = True
-        if ignore_vel_max:
-            num_step = self.num_substeps
-            rot_vel = angle / self.timestep
-            vel = length / self.timestep
-
-        else:
-            num_step = self.num_substeps
-            rot_vel = angle / self.timestep
-            vel = length / self.timestep
-
-            if rot_vel > self.rot_vel_max:
-                rot_vel = self.rot_vel_max
-            if rot_vel < -self.rot_vel_max:
-                rot_vel = -self.rot_vel_max
-            if vel > self.vel_max:
-                vel = self.vel_max
-            if vel < -self.vel_max:
-                vel = -self.vel_max
-
-            if rot_vel > vel / self.robot_radius:
-                rot_vel = vel / self.robot_radius
-
-        traj = self.trajectory_rollout(vel, rot_vel, x0=start[0], y0=start[1], theta0=theta)
-
-        return traj
+        return trajectory
 
     def cost_to_come(self, trajectory_o, node):
         # The cost to get to a node from lavalle
@@ -441,7 +409,6 @@ class PathPlanner:
 
             theta_s = math.atan2(y_d, x_d)
             theta_d = theta_s - node[2]
-            theta_d_norm = math.atan2(math.sin(theta_d), math.cos(theta_d))
             cost += np.sqrt(x_d ** 2 + y_d ** 2  )#+ (0.1* theta_d_norm)**2)
 
         return cost
@@ -684,8 +651,8 @@ def main():
 
     # RRT precursor
     path_planner = PathPlanner(map_filename, map_setings_filename, goal_point, stopping_dist)
-    # nodes = path_planner.rrt_star_planning()
-    nodes = path_planner.rrt_planning()
+    nodes = path_planner.rrt_star_planning()
+    # nodes = path_planner.rrt_planning()
     node_path_metric = np.hstack(path_planner.recover_path())
 
     # Leftover test functions
