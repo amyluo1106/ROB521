@@ -14,7 +14,7 @@ import math
 import scipy.spatial as sp
 import os
 
-np.random.seed(66)
+np.random.seed(15)
 
 def load_map(filename):
     im = mpimg.imread("../maps/" + filename)
