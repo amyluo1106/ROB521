@@ -8,7 +8,7 @@ from std_msgs.msg import Empty
 from geometry_msgs.msg import Twist
 
 INT32_MAX = 2**31
-DRIVEN_DISTANCE = 0.75 #in meters
+DRIVEN_DISTANCE = 1.0 #in meters
 TICKS_PER_ROTATION = 4096
 
 class wheelRadiusEstimator():
@@ -77,6 +77,7 @@ class wheelRadiusEstimator():
             # Calculate the radius of the wheel based on encoder measurements
 
             radius = TICKS_PER_ROTATION * DRIVEN_DISTANCE / ((self.del_left_encoder + self.del_right_encoder) * np.pi)
+            # 0.033m
             print('Calibrated Radius: {} m'.format(radius))
 
             #Reset the robot and calibration routine

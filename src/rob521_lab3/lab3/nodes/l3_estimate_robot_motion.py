@@ -178,20 +178,21 @@ class WheelOdom:
             self.wheel_odom_pub.publish(self.wheel_odom)
 
             self.bag.write('odom_est', self.wheel_odom)
+            self.bag.write('odom_onboard', self.odom)
 
             # for testing against actual odom
             print("Wheel Odom: x: %2.3f, y: %2.3f, t: %2.3f" % (
                 self.pose.position.x, self.pose.position.y, theta_bar
             ))
-            # print("Turtlebot3 Odom: x: %2.3f, y: %2.3f, t: %2.3f" % (
-            #     self.odom.pose.pose.position.x, self.odom.pose.pose.position.y,
-            #     euler_from_ros_quat(self.odom.pose.pose.orientation)[2]
-            # ))
+            print("Turtlebot3 Odom: x: %2.3f, y: %2.3f, t: %2.3f" % (
+                self.odom.pose.pose.position.x, self.odom.pose.pose.position.y,
+                euler_from_ros_quat(self.odom.pose.pose.orientation)[2]
+            ))
 
     def odom_cb(self, odom_msg):
         # get odom from turtlebot3 packages
         self.odom = odom_msg
-        self.bag.write('odom_onboard', self.odom)
+        #self.bag.write('odom_onboard', self.odom)
 
     def plot(self, bag):
         data = {"odom_est":{"time":[], "data":[]}, 

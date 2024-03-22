@@ -78,7 +78,7 @@ class wheelBaselineEstimator():
             # Calculate the wheel baseline based on encoder measurements
 
             separation = (WHEEL_RADIUS / (2*TICKS_PER_ROTATION)) * (self.del_right_encoder - self.del_left_encoder) / NUM_ROTATIONS
-            # 0.287m
+            # 0.287m/2
             print('Calibrated Separation: {} m'.format(separation))
 
             #Reset the robot and calibration routine

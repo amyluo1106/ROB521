@@ -239,28 +239,27 @@ class PathPlanner:
         heading_error = math.atan2(
             math.sin(heading_error), math.cos(heading_error))
         
-        # tune parameter?
-        rot_vel = -0.35 * np.tan(heading_error)
+        
+        # tune parameter
+        rot_vel = 0.5 * np.tan(heading_error)
 
         # max rotational velocity constraint
-        if rot_vel > self.rot_vel_max:
-            rot_vel = self.rot_vel_max
         if rot_vel < -self.rot_vel_max:
             rot_vel = -self.rot_vel_max
+        if rot_vel > self.rot_vel_max:
+            rot_vel = self.rot_vel_max
 
-        vel = self.vel_max / (abs(rot_vel) + 1)  # not sure
-
+        vel = self.vel_max / (abs(rot_vel) + 1)  
         # max velocity constraint
-        if vel > self.vel_max:
-            vel = self.vel_max
         if vel < -self.vel_max:
             vel = -self.vel_max
+        if vel > self.vel_max:
+            vel = self.vel_max
 
-        # turning radius/maximum curvature constraint
-        if rot_vel > vel / self.robot_radius:
-            rot_vel = vel / self.robot_radius
+        
+        
 
-        return vel, -rot_vel
+        return vel, rot_vel
 
     def trajectory_rollout(self, vel, rot_vel, x0, y0, theta0):
         # Given your chosen velocities determine the trajectory of the robot for your given timestep
@@ -337,6 +336,7 @@ class PathPlanner:
         # Settings
         # node is a 3 by 1 node
         # point is a 2 by 1 point
+
         # line 1 through start_point tangent to theta
         # line 2 normal to line 1
         # line 3 through start_point and final_point
@@ -351,9 +351,9 @@ class PathPlanner:
 
         # Calculate slopes
         slope1 = np.tan(theta)
-        slope2 = 9998 if slope1 == 0 else -1 / slope1
+        slope2 = 100000 if slope1 == 0 else -1 / slope1
         slope3 = (final_point[1] - start_point[1]) / ((final_point[0] - start_point[0]) + 0.001)
-        slope4 = 9999 if slope3 == 0 else -1 / slope3
+        slope4 = 100001 if slope3 == 0 else -1 / slope3
 
         # Calculate y-intercepts
         y_intercept2 = start_point[1] - slope2 * start_point[0]
@@ -404,17 +404,11 @@ class PathPlanner:
         cost = 0.0
         # Path distance
         for i in range(1, len(trajectory_o[0])):
-            x_d = trajectory_o[0, i] - trajectory_o[0, i - 1]
-            y_d = trajectory_o[1, i] - trajectory_o[1, i - 1]
-
-            theta_s = math.atan2(y_d, x_d)
-            theta_d = theta_s - node[2]
-            cost += np.sqrt(x_d ** 2 + y_d ** 2  )#+ (0.1* theta_d_norm)**2)
+            dx = trajectory_o[0, i] - trajectory_o[0, i - 1]
+            dy = trajectory_o[1, i] - trajectory_o[1, i - 1]
+            cost += np.sqrt(dx ** 2 + dy ** 2)
 
         return cost
-
-        # dist = np.linalg.norm(trajectory_o[1:, :2] - trajectory_o[:-1, :2], axis = -1).sum()
-        # return dist
 
     def update_children(self, node_id):
         # Given a node_id with a changed cost, update all connected nodes with the new cost
@@ -471,34 +465,6 @@ class PathPlanner:
                     print("rrt success")
                     print("iterations: ", counter)
                     return self.recover_path()
-        return self.nodes
-
-            
-
-            # # Check if goal has been reached
-            # if not (collision_detected or is_duplicate):
-            #     # Add node to list
-            #     cost = 0
-            #     new_node_id = self.nodes[-1].tag + 1
-            #     self.nodes[closest_node_id].children_ids.append(new_node_id)
-            #     new_node_position = np.array(trajectory_o[:, -1].reshape((3, 1)))
-            #     new_node = Node(new_node_position, closest_node_id, cost, new_node_id)
-            #     self.nodes.append(new_node)
-
-            #     # Visualizing the path
-            #     temp_positions = np.array(trajectory_o[0:2, :]).copy().T
-            #     self.window.add_se2_pose(np.array(trajectory_o[:, -1].reshape((3,))))
-            #     for position in temp_positions:
-            #         self.window.add_point(position)
-
-            #     coords = [trajectory_o[0, -1], trajectory_o[1, -1]]
-            #     if abs(euclidean(np.ravel(self.goal_point), coords)) < self.stopping_dist:
-            #         print("RRT success")
-            #         print("Iterations: ", counter)
-            #         return self.recover_path()
-
-            # return self.nodes
-
 
     def rrt_star_planning(self):
         # This function performs RRT* for the given map and robot
@@ -639,14 +605,14 @@ class PathPlanner:
 
 def main():
     # Set map information
-    # map_filename = "willowgarageworld_05res.png"
-    map_filename = "myhal.png"
-    # map_setings_filename = "willowgarageworld_05res.yaml"
-    map_setings_filename = "myhal.yaml"
+    map_filename = "willowgarageworld_05res.png"
+    # map_filename = "myhal.png"
+    map_setings_filename = "willowgarageworld_05res.yaml"
+    # map_setings_filename = "myhal.yaml"
 
     # robot information
     # goal_point = np.array([[42], [-44]]) #m
-    goal_point = np.array([[7], [0]])  # m
+    goal_point = np.array([[8], [0]])  # m
     stopping_dist = 0.5  # m
 
     # RRT precursor
@@ -656,10 +622,10 @@ def main():
     node_path_metric = np.hstack(path_planner.recover_path())
 
     # Leftover test functions
-    np.save("shortest_path.npy", node_path_metric)
+    np.save("path.npy", node_path_metric)
 
     # Plot path
-    path = "./shortest_path.npy"
+    path = "./path.npy"
     filename = os.path.splitext(os.path.split(path)[-1])[0]
     path = np.load(path).T[:, :, None]
     for p1, p2 in zip(path[:-1], path[1:]):
